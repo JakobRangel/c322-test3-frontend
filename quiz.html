@@ -26,9 +26,9 @@
         <button id="nextButton" onclick="goNext()" >Next</button>
       </div>
     </div>
+    <script src="configuration.js"></script>
 
     <script>
-      let host = "http://localhost:8080";
       const urlParams = new URLSearchParams(window.location.search);
       const id = urlParams.get("id");
       let quiz = null;
@@ -42,7 +42,8 @@
       startTheQuiz();
 
       async function startTheQuiz() {
-        let response = await fetch(host + "/quizzes/" + id);
+        const headers = {'Authorization': `Bearer ${configuration.token()}`};
+        let response = await fetch(getHost() + "/quizzes/" + id, {headers});
         quiz = await response.json();
         await displayTheQuestion(0);
       }
@@ -108,31 +109,41 @@
             document.getElementById("backButton").hidden = false;
         }
       }
+      async function fetchImageAndSetSrc(question) {
+      const headers = {'Authorization': `Bearer ${configuration.token()}`};
+      const response = await fetch(getHost() + `/questions/${question.id}/image`, {headers});
+      const imageBlob = await response.blob();
+      const imageUrl = URL.createObjectURL(imageBlob);
+      document.getElementById(`quiz${question.id}`).src = imageUrl;
+  }
+  async function presentTheQuestion(question) {
+    item.innerHTML = ""; // Clear previous question content
+    let div = document.createElement("div");
+    div.className = "card";
+    let innerHtml = `
+        <img id="quiz${question.id}" alt="Question Image" style="width: 100%" />
+        <div class="container">
+            <h4><b>${question.id}</b></h4> 
+            <p>${question.description}</p>
+            <form>
+                <input type="radio" id="q${question.id}ptionA" name="q2Answer" value="A">
+                <label for="q${question.id}ptionA">${question.choices[0]}</label><br>
 
-      async function presentTheQuestion(question) {
-        item.innerHTML = "";
-        let div = document.createElement("div");
-        div.className = "card";        
-        let innerHtml = `
-         <img src="http://localhost:8080/questions/${question.id}/image" alt="question" style="width:100%">
-         <div class="container">
-           <h4><b>${question.id}</b></h4>
-           <p>${question.description}</p>
-           <form>
-               <input type="radio" id="optionA" name="answer" value="A">
-               <label for="optionA" name="optionA">${question.choices[0]}</label><br>
+                <input type="radio" id="q${question.id}ptionB" name="q2Answer" value="B">
+                <label for="q${question.id}ptionB">${question.choices[1]}</label><br>
 
-               <input type="radio" id="optionB" name="answer" value="B">
-               <label for="optionB" name="optionB">${question.choices[1]}</label><br>
+                <input type="radio" id="q${question.id}ptionC" name="q2Answer" value="C">
+                <label for="q${question.id}ptionC">${question.choices[2]}</label><br>       
+            </form> 
+        </div>
+    `;
+    div.innerHTML = innerHtml;
+    item.appendChild(div); // Append to 'item' instead of 'list'
 
-               <input type="radio" id="optionC" name="answer" value="C">
-               <label for="optionC" name="optionC">${question.choices[2]}</label><br>
-           </form>
-         </div>
-             `;
-        div.innerHTML = innerHtml;
-        item.appendChild(div);
-      }
+    // Fetch and set the image source after appending the div
+    await fetchImageAndSetSrc(question);
+}
+
     </script>
   </body>
 </html>

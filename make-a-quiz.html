@@ -37,9 +37,9 @@
       </h3>
       <div id="quiz"></div>
     </div>
+    <script src="configuration.js"></script>
 
     <script>
-      let host = "http://localhost:8080";
       let questions = [];
       let list = document.getElementById("list");
       let quiz = document.getElementById("quiz");
@@ -51,11 +51,18 @@
       displayTheQuestions();
 
       async function getAll() {
-        let response = await fetch(host + "/questions");
+        const headers = {'Authorization': `Bearer ${configuration.token()}`};
+        let response = await fetch(getHost() + "/questions", {headers});
         let result = await response.json();
         return result;
       }
-
+      async function fetchImageAndSetSrc(question) {
+      const headers = {'Authorization': `Bearer ${configuration.token()}`};
+      const response = await fetch(getHost() + `/questions/${question.id}/image`, {headers});
+      const imageBlob = await response.blob();
+      const imageUrl = URL.createObjectURL(imageBlob);
+      document.getElementById(`quiz${question.id}`).src = imageUrl;
+  }
       async function displayTheQuestions() {
         if (questions.length == 0) {
           questions = await getAll();
@@ -78,27 +85,28 @@
             console.log(quizQuestions);
           };
           div.className = "card";
-          let innerHtml = `
-       
-      <img src="http://localhost:8080/questions/${question.id}/image" alt="question" style="width:100%">
-      <div class="container">
-        <h4><b>${question.id}</b></h4> 
-        <p>${question.description}</p>
-        <form>
-            <input type="radio" id="q${question.id}ptionA" name="q2Answer" value="A">
-            <label for="q${question.id}ptionA">${question.choices[0]}</label><br>
+        let innerHtml = `
+            <img id="quiz${question.id}" alt="Question Image" style="width: 100%" />
+            <div class="container">
+                <h4><b>${question.id}</b></h4> 
+                <p>${question.description}</p>
+                <form>
+                    <input type="radio" id="q${question.id}ptionA" name="q2Answer" value="A">
+                    <label for="q${question.id}ptionA">${question.choices[0]}</label><br>
 
-            <input type="radio" id="q${question.id}ptionB" name="q2Answer" value="B">
-            <label for="q${question.id}ptionB">${question.choices[1]}</label><br>
+                    <input type="radio" id="q${question.id}ptionB" name="q2Answer" value="B">
+                    <label for="q${question.id}ptionB">${question.choices[1]}</label><br>
 
-            <input type="radio" id="q${question.id}ptionC" name="q2Answer" value="C">
-            <label for="q${question.id}ptionC">${question.choices[2]}</label><br>       
-        </form> 
-      </div>
-   
-          `;
-          div.innerHTML = innerHtml;
-          list.appendChild(div);
+                    <input type="radio" id="q${question.id}ptionC" name="q2Answer" value="C">
+                    <label for="q${question.id}ptionC">${question.choices[2]}</label><br>       
+                </form> 
+            </div>
+        `;
+        div.innerHTML = innerHtml;
+        list.appendChild(div);
+
+        // Fetch and set the image source after appending the div
+        await fetchImageAndSetSrc(question);
         }
       }
 
@@ -107,20 +115,22 @@
         let endpoint = "";
         let request = {};
         if (!quizId) {
-          endpoint = host + "/quizzes";
+          endpoint = getHost() + "/quizzes";
           request = {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${configuration.token()}`
             },
             body: JSON.stringify({"title": quizTitle, "questionIds": quizQuestions}),
           };
         } else {
-          endpoint = host + "/quizzes/" + quizId;
+          endpoint = getHost() + "/quizzes/" + quizId;
           request = {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
+              'Authorization': `Bearer ${configuration.token()}`
             },
             body: JSON.stringify({"id": quizId, "title": quizTitle, "questionIds": quizQuestions}),
           };
